@@ -1,0 +1,45 @@
+name: High Speed VPS Setup
+
+on:
+  workflow_dispatch:  # Lets you manually start the VPS
+
+jobs:
+  build:
+    runs-on: ubuntu-latest  # GitHub's own temporary runner
+    steps:
+      - name: 🧰 Prepare SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "SSH key ready ✅"
+
+      - name: 🌐 Install Oracle Cloud CLI
+        run: |
+          sudo apt update -y
+          sudo apt install -y python3-pip
+          pip install oci-cli
+          echo "Oracle Cloud CLI installed ✅"
+
+      - name: 🔑 Configure Oracle Cloud
+        run: |
+          mkdir -p ~/.oci
+          echo "${{ secrets.ORACLE_CONFIG }}" > ~/.oci/config
+          echo "${{ secrets.ORACLE_KEY }}" > ~/.oci/oci_api_key.pem
+          chmod 600 ~/.oci/oci_api_key.pem
+          echo "Oracle configuration complete ✅"
+
+      - name: 🚀 Launch 64GB VPS Instance
+        run: |
+          oci compute instance launch \
+            --availability-domain "${{ secrets.OCI_DOMAIN }}" \
+            --compartment-id "${{ secrets.OCI_COMPARTMENT }}" \
+            --shape "VM.Standard.E4.Flex" \
+            --shape-config '{"ocpus":8,"memoryInGBs":64}' \
+            --image-id "${{ secrets.OCI_IMAGE }}" \
+            --display-name "GitHub-64GB-VPS"
+          echo "VPS Created 🚀"
+
+      - name: ✅ Finish
+        run: echo "Your VPS is now running in Oracle Cloud 🎉"
+ add vps workflow
